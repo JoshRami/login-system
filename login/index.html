@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lacoste</title>
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+      type="text/css"
+    />
+  </head>
+  <body>
+    <section class="mx-auto mb-4 mt-1 d-flex justify-content-center">
+      <img
+        class="img-fluid"
+        style="width: 120px"
+        src="/login/assets/images/lacoste.svg"
+        alt="Lacoste"
+      />
+    </section>
+    <div id="resultado" class="alert show col-4" role="alert"></div>
+    <section class="d-flex justify-content-center mt-4 pt-3 px-3">
+      <form
+        id="loginForm"
+        action=""
+        method="POST"
+        novalidate="novalidate"
+        class="shadow-lg p-5 rounded-lg"
+      >
+        <div class="d-flex justify-content-center">
+          <img
+            class="img-fluid"
+            style="width: 100px"
+            src="/login/assets/images/user.png"
+            alt="user avatar"
+          />
+        </div>
+        <div class="form-group row">
+          <label for="inputEmail" class="px-0 col-sm-2 col-form-label"
+            >Usuario</label
+          >
+          <input
+            type="text"
+            class="form-control form-text text-muted"
+            id="txtUsuario"
+            name="txtUsuario"
+          />
+        </div>
+        <div class="form-group row">
+          <label for="inputPassword" class="px-0 col-sm-2 col-form-label"
+            >Password</label
+          >
+          <input
+            type="password"
+            class="form-control form-text text-muted"
+            id="txtClave"
+            name="txtClave"
+          />
+        </div>
+        <div class="form-group row">
+          <div class="px-0 col-sm-10">
+            <button type="submit" class="px-5 btn btn btn-outline-success">
+              Sign in
+            </button>
+          </div>
+        </div>
+      </form>
+    </section>
+    <script src="assets/js/Password.js"></script>
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <!--Script que contiene los metodos para generar una cadena (hash) encriptada-->
+    <script src="assets/js/sha512.js" type="text/javascript"></script>
+    <!--PLugin de Jquery que sirve para realizar las validaciones del lado del cliente-->
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.1/dist/jquery.validate.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.1/dist/additional-methods.js"></script>
+    <script>
+      //Una pagina no se puede manipular de forma segura hasta que el documento este 'Listo'
+      $(document).ready(function () {
+        //Creacion de las reglas de validacion que utilizara Jquery Validate
+        $("#loginForm").validate({
+          //Reglas
+          rules: {
+            txtUsuario: {
+              required: true,
+            },
+            txtClave: {
+              required: true,
+            },
+          },
+          //Mensajes
+          messages: {
+            txtUsuario: {
+              required: "Por favor ingrese un nombre de usuario",
+            },
+            txtClave: {
+              required: "Por favor ingrese un password",
+            },
+          },
+          //Manejo de errores
+          errorElement: "span",
+          errorPlacement: function (error, element) {
+            // Add the 'form-text' and 'text-muted' classes to the error element
+            error.addClass("form-text text-danger");
+            error.insertAfter(element);
+          },
+          //Manejador de envio
+          submitHandler: function () {
+            console.log("submitted");
+            login();
+          },
+        });
+      });
+
+      //Metodo para encriptar y enviar el formulario
+      function login() {
+        //Capturamos el valor del password y lo asignamos a una variable
+        var token = $("#txtClave").val();
+        //Creamos un objeto HASH utilizando el metodo jsSHA
+        var hashObj = new jsSHA(token, "ASCII");
+
+        /*** Encriptamos la cadena utilizando el algoritmo SHA512 */
+        var nToken = hashObj.getHash("SHA-512", "HEX");
+        console.log(nToken);
+        //Seteamos el hash como valor en el campo de password
+        $("#txtClave").val(nToken);
+
+        //Creamos la funcion Ajax para el envio del formulario
+        $.ajax({
+          url: "login.php",
+          type: "POST",
+          dataType: "html",
+          data: $("#loginForm").serialize(),
+          success: function (respuesta) {
+            //Trim limpia los espacio al inicio y al final de una cadena
+            var result = $.trim(respuesta);
+            //Validamos la respuesta obtenida
+            $("#resultado").removeClass("none");
+            if (result === "Bienvenido") {
+              $("#resultado").html(respuesta);
+              $("#resultado").removeClass("alert-warning");
+              $("#resultado").removeClass("alert-danger");
+              $("#resultado").addClass("alert-success");
+              $("#resultado").addClass("mx-auto");
+              $("#resultado").addClass("mt-2");
+              $("#resultado").show();
+              //Creamos un temporizador
+              setTimeout(function () {
+                location.href = "main.php";
+              }, 3000);
+            } else {
+              $("#resultado").html("&iexcl;" + respuesta + "!");
+              $("#resultado").removeClass("alert-danger");
+              $("#resultado").removeClass("alert-success");
+              $("#resultado").addClass("alert-warning");
+              $("#resultado").addClass("mx-auto");
+              $("#resultado").addClass("mt-2");
+              $("#resultado").show();
+            }
+          },
+          error: function (error) {
+            $("#resultado").html("Error: " + error.statusText);
+            $("#resultado").removeClass("alert-warning");
+            $("#resultado").removeClass("alert-success");
+            $("#resultado").addClass("alert-danger");
+            $("#resultado").addClass("mx-auto");
+            $("#resultado").addClass("mt-2");
+            $("#resultado").show();
+          },
+        });
+      }
+    </script>
+  </body>
+</html>
